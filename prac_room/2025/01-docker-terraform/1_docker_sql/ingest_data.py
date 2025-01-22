@@ -2,23 +2,33 @@
 import pandas as pd
 from sqlalchemy import create_engine
 from time import time
+import argparse
+import os
 
-def setup_database():
-    """Create database connection and initialize table"""
-    engine = create_engine('postgresql://root:root@localhost:5432/ny_taxi')
+
+def main(params, chunk_size=100000):
+    """Main function to setup database connection and process taxi data"""
+    # Extract parameters
+    user = params.user
+    password = params.password
+    host = params.host
+    port = params.port
+    db = params.db
+    table_name = params.table_name
+    url = params.url
+    csv_name = url.split("/")[-1]
+
+    os.system(f"wget {url} -O {csv_name}")
     
-    # Load sample to get schema
+    # Create database connection
+    engine = create_engine(f'postgresql://{user}:{password}@{host}:{port}/{db}')
+    
+    # Initialize table with schema
     df_sample = pd.read_csv('yellow_tripdata_2021-01.csv', nrows=100)
     df_sample.tpep_pickup_datetime = pd.to_datetime(df_sample.tpep_pickup_datetime)
     df_sample.tpep_dropoff_datetime = pd.to_datetime(df_sample.tpep_dropoff_datetime)
-    
-    # Create empty table
-    df_sample.head(n=0).to_sql(name='yellow_taxi_data', con=engine, if_exists='replace')
-    
-    return engine
+    df_sample.head(n=0).to_sql(name=table_name, con=engine, if_exists='replace')
 
-def process_taxi_data(engine, chunk_size=100000):
-    """Process taxi data in chunks and load to database"""
     df_iter = pd.read_csv('yellow_tripdata_2021-01.csv', iterator=True, chunksize=chunk_size)
     total_chunks = 0
     
@@ -48,5 +58,15 @@ def process_taxi_data(engine, chunk_size=100000):
             df_iter.close()
 
 if __name__ == "__main__":
-    engine = setup_database()
-    process_taxi_data(engine)
+    parser = argparse.ArgumentParser(description='Ingest CSV data to Postgres')
+
+    parser.add_argument('user', help='user name for postgres')
+    parser.add_argument('password', help='password for postgres')
+    parser.add_argument('host', help='host for postgres')
+    parser.add_argument('port', help='port for postgres')
+    parser.add_argument('db', help='database name for postgres')
+    parser.add_argument('table_name', help='name of the table where we will write the results to')
+    parser.add_argument('url', help='url of the csv file')
+
+    args = parser.parse_args()
+    main(args, chunk_size=100000)
