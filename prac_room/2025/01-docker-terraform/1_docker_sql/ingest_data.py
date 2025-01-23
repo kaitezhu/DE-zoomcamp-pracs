@@ -1,4 +1,3 @@
-# NYC Yellow Taxi Data Pipeline - Improved Version
 import pandas as pd
 from sqlalchemy import create_engine
 from time import time
@@ -19,17 +18,17 @@ def main(params, chunk_size=100000):
     csv_name = url.split("/")[-1]
 
     os.system(f"wget {url} -O {csv_name}")
-    
+
     # Create database connection
     engine = create_engine(f'postgresql://{user}:{password}@{host}:{port}/{db}')
     
     # Initialize table with schema
-    df_sample = pd.read_csv('yellow_tripdata_2021-01.csv', nrows=100)
+    df_sample = pd.read_csv(csv_name, nrows=100)
     df_sample.tpep_pickup_datetime = pd.to_datetime(df_sample.tpep_pickup_datetime)
     df_sample.tpep_dropoff_datetime = pd.to_datetime(df_sample.tpep_dropoff_datetime)
     df_sample.head(n=0).to_sql(name=table_name, con=engine, if_exists='replace')
 
-    df_iter = pd.read_csv('yellow_tripdata_2021-01.csv', iterator=True, chunksize=chunk_size)
+    df_iter = pd.read_csv(csv_name, iterator=True, chunksize=chunk_size)
     total_chunks = 0
     
     try:
@@ -42,7 +41,7 @@ def main(params, chunk_size=100000):
             df.tpep_dropoff_datetime = pd.to_datetime(df.tpep_dropoff_datetime)
             
             # Load to database
-            df.to_sql(name='yellow_taxi_data', con=engine, if_exists='append')
+            df.to_sql(name=table_name, con=engine, if_exists='append')
             
             # Log progress
             total_chunks += 1
@@ -60,13 +59,13 @@ def main(params, chunk_size=100000):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Ingest CSV data to Postgres')
 
-    parser.add_argument('user', help='user name for postgres')
-    parser.add_argument('password', help='password for postgres')
-    parser.add_argument('host', help='host for postgres')
-    parser.add_argument('port', help='port for postgres')
-    parser.add_argument('db', help='database name for postgres')
-    parser.add_argument('table_name', help='name of the table where we will write the results to')
-    parser.add_argument('url', help='url of the csv file')
+    parser.add_argument('--user', help='user name for postgres')
+    parser.add_argument('--password', help='password for postgres')
+    parser.add_argument('--host', help='host for postgres')
+    parser.add_argument('--port', help='port for postgres')
+    parser.add_argument('--db', help='database name for postgres')
+    parser.add_argument('--table_name', help='name of the table where we will write the results to')
+    parser.add_argument('--url', help='url of the csv file')
 
     args = parser.parse_args()
     main(args, chunk_size=100000)
