@@ -16,3 +16,5 @@ serving_dir
 !week_6_stream_processing/avro_example/data/rides.csv
 *.csv
 *.gz1_docker_sql/yellow_tripdata_2021-01.csv.gz
+prac_room/2025/01-docker-terraform/1_docker_sql/yellow_tripdata_2021-01.csv
+prac_room/2025/01-docker-terraform/1_docker_sql/yellow_tripdata_2021-01.csv.gz
